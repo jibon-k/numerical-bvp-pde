@@ -39,3 +39,16 @@ def rayleigh_ritz(ne, f, q):
     y = np.zeros(ne+1)
     y[1:-1] = c
     return x, y
+
+
+def fd_reaction(N, f, q):
+    h = 1/N
+    x = np.linspace(0, 1, N+1)
+    n = N-1
+    ab = np.zeros((3, n))
+    ab[0, 1:] = -1/h**2
+    ab[1, :] = 2/h**2 + q
+    ab[2, :-1] = -1/h**2
+    y = np.zeros(N+1)
+    y[1:-1] = solve_banded((1, 1), ab, f(x[1:-1]))
+    return x, y
