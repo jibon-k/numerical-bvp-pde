@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.linalg import solve_banded
 from scipy.sparse import diags, identity, kron
 from scipy.sparse.linalg import spsolve
 
@@ -71,6 +72,32 @@ def sor(u0, h, w, tol=1e-6, max_iter=100000, f=None):
 
 def gauss_seidel(u0, h, tol=1e-6, max_iter=100000, f=None):
     return sor(u0, h, 1.0, tol, max_iter, f)
+
+
+def adi(N, f, rho, tol=1e-6, max_iter=10000):
+    h = 1/N
+    n = N-1
+    x = np.linspace(0, 1, N+1)
+    X, Y = np.meshgrid(x, x, indexing='ij')
+    F = f(X[1:-1, 1:-1], Y[1:-1, 1:-1])
+    ab = np.zeros((3, n))
+    ab[0, 1:] = -1/h**2
+    ab[1, :] = 2/h**2 + rho
+    ab[2, :-1] = -1/h**2
+    U = np.zeros((n, n))
+    for k in range(1, max_iter+1):
+        # y explicit, x implcit
+        Hy = (2*U - np.pad(U, ((0, 0), (1, 0)))[:, :-1] - np.pad(U, ((0, 0), (0, 1)))[:, 1:])/h**2
+        Us = solve_banded((1, 1), ab, rho*U - Hy + F)
+        Hx = (2*Us - np.pad(Us, ((1, 0), (0, 0)))[:-1, :] - np.pad(Us, ((0, 1), (0, 0)))[1:, :])/h**2
+        Un = solve_banded((1, 1), ab, (rho*Us - Hx + F).T).T
+        err = np.max(np.abs(Un-U))
+        U = Un
+        if err < tol:
+            break
+    u = np.zeros((N+1, N+1))
+    u[1:-1, 1:-1] = U
+    return u, k
 
 
 def laplace_series(x, y, nterms=100):
