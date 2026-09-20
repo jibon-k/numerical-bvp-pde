@@ -28,3 +28,11 @@ def crank_nicolson(u0, r, nt):
 
 def hat(x):
     return np.minimum(2*x, 2-2*x)
+
+
+def hat_exact(x, t, nterms=200):
+    s = np.zeros_like(x)
+    for n in range(1, nterms+1):
+        bn = 8*np.sin(n*np.pi/2)/(n**2*np.pi**2)
+        s += bn*np.exp(-n**2*np.pi**2*t)*np.sin(n*np.pi*x)
+    return s
